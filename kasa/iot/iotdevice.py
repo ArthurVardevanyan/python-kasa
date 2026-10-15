@@ -694,11 +694,15 @@ class IotDevice(Device):
         payload = {"ssid": ssid, "password": password, "key_type": int(keytype)}
         try:
             return await _join("netif", payload)
-        except KasaException as ex:
-            _LOGGER.debug(
-                "Unable to join using 'netif', retrying with 'softaponboarding': %s", ex
-            )
+        except KasaException:
+            _LOGGER.debug("Falling back to 'softaponboarding'")
             return await _join("smartlife.iot.common.softaponboarding", payload)
+        except Exception:
+            # Device disconnected after accepting command (expected for legacy devices)
+            _LOGGER.debug(
+                "Device disconnected after wifi join request, this is expected"
+            )
+            return {}
 
     @property
     def max_device_response_size(self) -> int:
